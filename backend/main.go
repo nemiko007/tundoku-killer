@@ -256,7 +256,6 @@ func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 
 // handleWorkflowExecute はUpstash Workflowからのリクエストを受け取り、煽りメッセージを生成・送信する
 func handleWorkflowExecute(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
 
 	// リクエストボディのパース
 	var payload WorkflowPayload
