@@ -24,6 +24,13 @@ type LineAuthRequest struct {
 	LineUserID      string `json:"lineUserID"` // LINE User IDも受け取る
 }
 
+// WorkflowPayload はUpstash Workflowから送られてくるペイロードの構造体
+type WorkflowPayload struct {
+	BookID      string `json:"bookId"`
+	UserID      string `json:"userId"`
+	InsultLevel int    `json:"insultLevel"`
+}
+
 // Book は書籍データを表す構造体
 type Book struct {
 	Title       string    `json:"title" firestore:"title"`
@@ -72,6 +79,9 @@ func main() {
 
 	// 書籍登録エンドポイントの追加
 	http.HandleFunc("/api/books", corsMiddleware(handleRegisterBook))
+
+	// Upstash Workflowからの煽り実行エンドポイントの追加
+	http.HandleFunc("/api/workflow/execute", corsMiddleware(handleWorkflowExecute))
 
 	fmt.Println("Server starting on port 8081...")
 	log.Fatal(http.ListenAndServe(":8081", nil))
@@ -242,4 +252,33 @@ func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Book registered successfully", "bookId": book.BookID})
+}
+
+// handleWorkflowExecute はUpstash Workflowからのリクエストを受け取り、煽りメッセージを生成・送信する
+func handleWorkflowExecute(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+
+	// リクエストボディのパース
+	var payload WorkflowPayload
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error reading request body: %v", err), http.StatusBadRequest)
+		return
+	}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		http.Error(w, fmt.Sprintf("Error unmarshalling request body: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("Received workflow execute request for bookId: %s, userId: %s, insultLevel: %d", payload.BookID, payload.UserID, payload.InsultLevel)
+
+	// TODO: ここに煽り実行ロジックを実装
+	// 1. Firestoreから書籍情報を取得
+	// 2. 書籍が未読の場合のみ処理 (status == "unread")
+	// 3. Gemini APIを叩いて煽り文を生成
+	// 4. LINE Messaging APIでユーザーにメッセージを送信
+	// 5. Firestoreの書籍ステータスを更新 (例: "insulted")
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Workflow execute received and processed (mocked)."})
 }
