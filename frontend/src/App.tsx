@@ -48,7 +48,7 @@ function App() {
         }
 
         // バックエンドにアクセストークンを送ってFirebase Custom Tokenを取得
-        const response = await fetch('http://localhost:8081/api/auth/line', {
+        const response = await fetch('https://tundoku-killer.onrender.com/api/auth/line', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -109,7 +109,7 @@ function App() {
         userId: firebaseUser.uid,
       };
 
-      const response = await fetch('http://localhost:8081/api/books', {
+      const response = await fetch('https://tundoku-killer.onrender.com/api/books', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

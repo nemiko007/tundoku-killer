@@ -135,6 +135,7 @@ func handleLineAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// カスタムトークンをJSON形式で返す
+	log.Printf("Generated custom token: %s", customToken)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"customToken": customToken})
 }
