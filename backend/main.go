@@ -39,12 +39,12 @@ func main() {
 	ctx := context.Background()
 
 	// Firebase Admin SDK の初期化
-	serviceAccountKeyPath := os.Getenv("FIREBASE_SERVICE_ACCOUNT_KEY_PATH")
-	if serviceAccountKeyPath == "" {
-		log.Fatalf("FIREBASE_SERVICE_ACCOUNT_KEY_PATH environment variable not set")
+	serviceAccountKeyJSON := os.Getenv("FIREBASE_SERVICE_ACCOUNT_KEY_JSON")
+	if serviceAccountKeyJSON == "" {
+		log.Fatalf("FIREBASE_SERVICE_ACCOUNT_KEY_JSON environment variable not set")
 	}
 
-	opt := option.WithCredentialsFile(serviceAccountKeyPath)
+	opt := option.WithCredentialsJSON([]byte(serviceAccountKeyJSON))
 	var err error
 	firebaseApp, err = firebase.NewApp(ctx, nil, opt) // グローバル変数に代入
 	if err != nil {
@@ -188,8 +188,13 @@ func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 		log.Printf("QSTASH_URL or QSTASH_TOKEN environment variable not set. Skipping Upstash Workflow.")
 	} else {
 		// 煽り実行エンドポイントのURL (バックエンドがRenderにデプロイされた場合のURL)
-		// TODO: 本番環境ではこのURLを環境変数から取得するようにする
-		targetURL := "http://localhost:8081/api/workflow/execute" // ローカルテスト用
+		renderExternalHostname := os.Getenv("RENDER_EXTERNAL_HOSTNAME")
+		if renderExternalHostname == "" {
+			log.Printf("RENDER_EXTERNAL_HOSTNAME environment variable not set. Skipping Upstash Workflow callback URL setup.")
+			http.Error(w, "RENDER_EXTERNAL_HOSTNAME environment variable not set for Upstash Workflow callback URL.", http.StatusInternalServerError)
+			return
+		}
+		targetURL := fmt.Sprintf("%s/api/workflow/execute", renderExternalHostname)
 
 		// Upstash Workflowに送るペイロード
 		workflowPayload := map[string]string{
