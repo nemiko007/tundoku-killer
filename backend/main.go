@@ -65,9 +65,10 @@ func main() {
 	}
 	defer firestoreClient.Close() // アプリ終了時にクライアントをクローズ
 
-	http.HandleFunc("/", corsMiddleware(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Hello from Backend!")
-	}))
+	// http.HandleFunc("/", corsMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	// 	fmt.Fprintln(w, "Hello from Backend!")
+	// }))
+	http.HandleFunc("/", corsMiddleware(handleWorkflowExecute))
 
 	http.HandleFunc("/health", corsMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -205,7 +206,7 @@ func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "RENDER_EXTERNAL_HOSTNAME environment variable not set for Upstash Workflow callback URL.", http.StatusInternalServerError)
 			return
 		}
-		targetURL := fmt.Sprintf("%s/api/workflow/execute", renderExternalHostname)
+		targetURL := fmt.Sprintf("%s/", renderExternalHostname)
 
 		// Upstash Workflowに送るペイロード
 		workflowPayload := map[string]string{
