@@ -221,7 +221,7 @@ func handleCheckDeadlines(w http.ResponseWriter, r *http.Request) {
 		}
 		if err != nil {
 			log.Printf("Error iterating documents: %v", err)
-			http.Error(w, "Error querying database", http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Error querying database: %v", err), http.StatusInternalServerError)
 			return
 		}
 
