@@ -208,7 +208,7 @@ func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "RENDER_EXTERNAL_HOSTNAME environment variable not set for Upstash Workflow callback URL.", http.StatusInternalServerError)
 			return
 		}
-		targetURL := fmt.Sprintf("%s/api/workflow/execute", renderExternalHostname)
+		targetURL := fmt.Sprintf("%s/api/workflow/execute", strings.TrimSuffix(renderExternalHostname, "/"))
 
 		// Upstash Workflowに送るペイロード
 		workflowPayload := map[string]string{
@@ -225,10 +225,16 @@ func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 			delayMs = 0 // 期限が過ぎている場合はすぐに実行
 		}
 
+		// QStashのURLがベースURLのみ(例: https://qstash.upstash.io)の場合に対応
+		if !strings.Contains(qstashURL, "/v2/publish") {
+			qstashURL = strings.TrimSuffix(qstashURL, "/") + "/v2/publish"
+		}
+
 		// QStashへのリクエストURLを作成 (宛先URLをパスに含める)
 		// 例: https://qstash.upstash.io/v2/publish/https://my-backend.com/api/workflow/execute
 		publishURL := fmt.Sprintf("%s/%s", strings.TrimSuffix(qstashURL, "/"), targetURL)
 
+		log.Printf("Sending Upstash request to: %s", publishURL)
 		req, err := http.NewRequestWithContext(ctx, "POST", publishURL, bytes.NewBuffer(jsonPayload))
 		if err != nil {
 			log.Printf("Error creating Upstash Workflow request: %v", err)
