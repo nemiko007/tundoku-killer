@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -235,13 +236,125 @@ func handleCheckDeadlines(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Found expired book: %s (ID: %s, User: %s, InsultLevel: %d)", book.Title, book.BookID, book.UserID, book.InsultLevel)
 			count++
 
-			// TODO: ここに煽り実行ロジックを実装
 			// 1. Gemini APIを叩いて煽り文を生成
+			insultMsg, err := generateInsult(book)
+			if err != nil {
+				log.Printf("Error generating insult for book %s: %v", book.BookID, err)
+				continue
+			}
+
 			// 2. LINE Messaging APIでユーザーにメッセージを送信
+			if err := sendLineMessage(book.UserID, insultMsg); err != nil {
+				log.Printf("Error sending LINE message to user %s: %v", book.UserID, err)
+				continue
+			}
+
 			// 3. Firestoreの書籍ステータスを更新 (例: "insulted")
+			_, err = doc.Ref.Update(ctx, []firestore.Update{
+				{Path: "status", Value: "insulted"},
+			})
+			if err != nil {
+				log.Printf("Error updating status for book %s: %v", book.BookID, err)
+			}
 		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"message": fmt.Sprintf("Checked deadlines. Found %d expired books.", count)})
+}
+
+// generateInsult はGemini APIを呼び出して煽り文を生成する
+func generateInsult(book Book) (string, error) {
+	apiKey := os.Getenv("GEMINI_API_KEY")
+	if apiKey == "" {
+		return "", fmt.Errorf("GEMINI_API_KEY is not set")
+	}
+
+	url := "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey
+
+	prompt := fmt.Sprintf("積読本「%s」(著者: %s) の期限が切れました。罵倒レベル%d (最大5) で、早く読むように煽るメッセージを短く(50文字以内)作成してください。返答はメッセージ内容のみにしてください。", book.Title, book.Author, book.InsultLevel)
+
+	requestBody, _ := json.Marshal(map[string]interface{}{
+		"contents": []interface{}{
+			map[string]interface{}{
+				"parts": []interface{}{
+					map[string]interface{}{
+						"text": prompt,
+					},
+				},
+			},
+		},
+	})
+
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(requestBody))
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("Gemini API error: %s", string(body))
+	}
+
+	var result struct {
+		Candidates []struct {
+			Content struct {
+				Parts []struct {
+					Text string `json:"text"`
+				} `json:"parts"`
+			} `json:"content"`
+		} `json:"candidates"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", err
+	}
+
+	if len(result.Candidates) > 0 && len(result.Candidates[0].Content.Parts) > 0 {
+		return result.Candidates[0].Content.Parts[0].Text, nil
+	}
+
+	return "早く読みなさい！(Geminiからの応答なし)", nil
+}
+
+// sendLineMessage はLINE Messaging API (Push Message) を呼び出す
+func sendLineMessage(lineUserID, message string) error {
+	accessToken := os.Getenv("LINE_CHANNEL_ACCESS_TOKEN")
+	if accessToken == "" {
+		return fmt.Errorf("LINE_CHANNEL_ACCESS_TOKEN is not set")
+	}
+
+	url := "https://api.line.me/v2/bot/message/push"
+
+	requestBody, _ := json.Marshal(map[string]interface{}{
+		"to": lineUserID,
+		"messages": []interface{}{
+			map[string]interface{}{
+				"type": "text",
+				"text": message,
+			},
+		},
+	})
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("LINE API error: %s", string(body))
+	}
+
+	return nil
 }
