@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -16,8 +17,10 @@ import (
 	"google.golang.org/api/option"
 )
 
-var firebaseApp *firebase.App         // Firebase Appインスタンスをグローバル変数にする
-var firestoreClient *firestore.Client // Firestoreクライアントをグローバル変数にする
+var (
+	firebaseApp     *firebase.App     // Firebase Appインスタンスをグローバル変数にする
+	firestoreClient *firestore.Client // Firestoreクライアントをグローバル変数にする
+)
 
 type LineAuthRequest struct {
 	LineAccessToken string `json:"lineAccessToken"`
@@ -222,15 +225,17 @@ func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 			delayMs = 0 // 期限が過ぎている場合はすぐに実行
 		}
 
-		req, err := http.NewRequestWithContext(ctx, "POST", qstashURL, bytes.NewBuffer(jsonPayload))
+		// QStashへのリクエストURLを作成 (宛先URLをパスに含める)
+		// 例: https://qstash.upstash.io/v2/publish/https://my-backend.com/api/workflow/execute
+		publishURL := fmt.Sprintf("%s/%s", strings.TrimSuffix(qstashURL, "/"), targetURL)
+
+		req, err := http.NewRequestWithContext(ctx, "POST", publishURL, bytes.NewBuffer(jsonPayload))
 		if err != nil {
 			log.Printf("Error creating Upstash Workflow request: %v", err)
 		} else {
 			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("Authorization", "Bearer "+qstashToken)
 			req.Header.Set("Upstash-Delay", fmt.Sprintf("%dms", delayMs)) // ms単位で遅延を指定
-			// Upstash-Callback-URL ヘッダーで、Upstashが叩くエンドポイントを指定
-			req.Header.Set("Upstash-Callback-URL", targetURL)
 
 			client := &http.Client{}
 			resp, err := client.Do(req)
@@ -256,7 +261,6 @@ func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 
 // handleWorkflowExecute はUpstash Workflowからのリクエストを受け取り、煽りメッセージを生成・送信する
 func handleWorkflowExecute(w http.ResponseWriter, r *http.Request) {
-
 	// リクエストボディのパース
 	var payload WorkflowPayload
 	body, err := io.ReadAll(r.Body)
