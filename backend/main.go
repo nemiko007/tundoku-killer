@@ -263,30 +263,42 @@ func handleCheckDeadlines(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": fmt.Sprintf("Checked deadlines. Found %d expired books.", count)})
 }
 
-// generateInsult はGemini APIを呼び出して煽り文を生成する
+// generateInsult はOpenAI APIを呼び出して煽り文を生成する
 func generateInsult(book Book) (string, error) {
-	apiKey := os.Getenv("GEMINI_API_KEY")
+	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
-		return "", fmt.Errorf("GEMINI_API_KEY is not set")
+		return "", fmt.Errorf("OPENAI_API_KEY is not set")
 	}
 
-	url := "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent?key=" + apiKey
+	url := "https://api.openai.com/v1/chat/completions"
 
 	prompt := fmt.Sprintf("積読本「%s」(著者: %s) の期限が切れました。罵倒レベル%d (最大5) で、早く読むように煽るメッセージを短く(50文字以内)作成してください。返答はメッセージ内容のみにしてください。", book.Title, book.Author, book.InsultLevel)
 
 	requestBody, _ := json.Marshal(map[string]interface{}{
-		"contents": []interface{}{
+		"model": "gpt-3.5-turbo",
+		"messages": []interface{}{
 			map[string]interface{}{
-				"parts": []interface{}{
-					map[string]interface{}{
-						"text": prompt,
-					},
-				},
+				"role":    "system",
+				"content": "あなたは積読を解消させるために、ユーザーを煽るメッセージを生成するアシスタントです。",
+			},
+			map[string]interface{}{
+				"role":    "user",
+				"content": prompt,
 			},
 		},
+		"max_tokens": 100, // 50文字以内だが、少し余裕を持たせる
 	})
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(requestBody))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -294,28 +306,26 @@ func generateInsult(book Book) (string, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("Gemini API error: %s", string(body))
+		return "", fmt.Errorf("OpenAI API error: %s", string(body))
 	}
 
 	var result struct {
-		Candidates []struct {
-			Content struct {
-				Parts []struct {
-					Text string `json:"text"`
-				} `json:"parts"`
-			} `json:"content"`
-		} `json:"candidates"`
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return "", err
 	}
 
-	if len(result.Candidates) > 0 && len(result.Candidates[0].Content.Parts) > 0 {
-		return result.Candidates[0].Content.Parts[0].Text, nil
+	if len(result.Choices) > 0 && result.Choices[0].Message.Content != "" {
+		return result.Choices[0].Message.Content, nil
 	}
 
-	return "早く読みなさい！(Geminiからの応答なし)", nil
+	return "早く読みなさい！(OpenAIからの応答なし)", nil
 }
 
 // sendLineMessage はLINE Messaging API (Push Message) を呼び出す
