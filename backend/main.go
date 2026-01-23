@@ -73,8 +73,8 @@ func main() {
 	// LINE認証エンドポイントの追加
 	http.HandleFunc("/api/auth/line", corsMiddleware(handleLineAuth))
 
-	// 書籍登録エンドポイントの追加
-	http.HandleFunc("/api/books", corsMiddleware(handleRegisterBook))
+	// 書籍関連のエンドポイント
+	http.HandleFunc("/api/books", corsMiddleware(handleBooks))
 
 	// GitHub Actionsからの定期実行用エンドポイント (Cron)
 	http.HandleFunc("/api/cron/check", corsMiddleware(handleCheckDeadlines))
@@ -144,6 +144,59 @@ func handleLineAuth(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Generated custom token: %s", customToken)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"customToken": customToken})
+}
+
+// handleBooks は /api/books へのリクエストをHTTPメソッドに応じて振り分ける
+func handleBooks(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		handleGetBooks(w, r)
+	case http.MethodPost:
+		handleRegisterBook(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// handleGetBooks は登録済みの書籍リストを取得する
+func handleGetBooks(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	userId := r.URL.Query().Get("userId")
+
+	if userId == "" {
+		http.Error(w, "userId query parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	// Firestoreから "completed" ではない本を取得
+	iter := firestoreClient.Collection("books").
+		Where("userId", "==", userId).
+		// Where("status", "!=", "completed"). // 読了済みの本も一旦すべて取得
+		Documents(ctx)
+	defer iter.Stop()
+
+	var books []Book
+	for {
+		doc, err := iter.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Printf("Error iterating documents: %v", err)
+			http.Error(w, "Failed to retrieve books", http.StatusInternalServerError)
+			return
+		}
+
+		var book Book
+		if err := doc.DataTo(&book); err != nil {
+			log.Printf("Error parsing book data: %v", err)
+			continue
+		}
+		books = append(books, book)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(books)
 }
 
 // handleRegisterBook は書籍登録リクエストを処理する
