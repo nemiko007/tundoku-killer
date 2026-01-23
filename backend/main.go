@@ -198,7 +198,12 @@ func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 	// Upstash Workflowをキックする
 	qstashURL := os.Getenv("QSTASH_URL")
 	qstashToken := os.Getenv("QSTASH_TOKEN")
+	// トークンのクリーニング: スペース、Bearerプレフィックス、引用符を除去
 	qstashToken = strings.TrimSpace(qstashToken)
+	qstashToken = strings.TrimPrefix(qstashToken, "Bearer ")
+	qstashToken = strings.TrimSpace(qstashToken)
+	qstashToken = strings.Trim(qstashToken, "\"'")
+
 	if qstashURL == "" || qstashToken == "" {
 		http.Error(w, "QSTASH_URL and QSTASH_TOKEN environment variables must be set", http.StatusInternalServerError)
 		return
@@ -237,6 +242,11 @@ func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 		// QStashへのリクエストURLを作成 (宛先URLをパスに含める)
 		// 例: https://qstash.upstash.io/v2/publish/https://my-backend.com/api/workflow/execute
 		publishURL := fmt.Sprintf("%s/%s", strings.TrimSuffix(qstashURL, "/"), targetURL)
+
+		// デバッグ用: トークンの一部を出力して確認 (セキュリティのため大部分は隠す)
+		if len(qstashToken) > 10 {
+			log.Printf("Using QStash Token: %s... (len: %d)", qstashToken[:5], len(qstashToken))
+		}
 
 		log.Printf("Sending Upstash request to: %s", publishURL)
 		req, err := http.NewRequestWithContext(ctx, "POST", publishURL, bytes.NewBuffer(jsonPayload))
