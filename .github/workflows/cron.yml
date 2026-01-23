@@ -13,5 +13,5 @@ jobs:
       - name: Call Backend Cron Endpoint
         run: |
           curl -X POST ${{ secrets.RENDER_EXTERNAL_HOSTNAME }}/api/cron/check \
-          -H "Authorization: Bearer ${{ amxdndndjenjdvcgdvcwvfehhrfgfigyhcbhwbdcbdjbshfcvjehchdvhsvvhv }}" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
           -H "Content-Type: application/json"
