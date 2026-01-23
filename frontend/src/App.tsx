@@ -198,6 +198,35 @@ function App() {
         }
     };
 
+    const handleCompleteClick = async (bookId: string) => {
+        // UIから対象の書籍を即座に削除（オプティミスティックUIアップデート）
+        setBooks((prevBooks) => prevBooks.filter((b) => b.bookId !== bookId));
+
+        try {
+            const response = await fetch(
+                "https://tundoku-killer.onrender.com/api/books/complete",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ bookId }),
+                },
+            );
+
+            if (!response.ok) {
+                // もしAPI呼び出しが失敗したら、UIを元に戻す（今回は簡略化のため省略）
+                console.error("Failed to mark book as completed.");
+                // 必要であれば、削除した書籍をstateに戻すロジックをここに追加
+                // setError('読了処理に失敗しました。ページをリロードしてください。');
+            }
+            // 成功しても特に何もしない（UIは更新済みのため）
+        } catch (err) {
+            console.error("読了処理エラー:", err);
+            // ここでもUIを元に戻す処理が必要
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-100 text-lg font-bold">
@@ -345,11 +374,29 @@ function App() {
                                             ).toLocaleDateString()}
                                         </p>
                                         <p
-                                            className={`text-sm font-semibold ${book.status === "insulted" ? "text-red-500" : "text-green-500"}`}
+                                            className={`text-sm font-semibold ${
+                                                book.status === "insulted"
+                                                    ? "text-red-500"
+                                                    : book.status ===
+                                                        "completed"
+                                                      ? "text-blue-500"
+                                                      : "text-yellow-500"
+                                            }`}
                                         >
                                             ステータス: {book.status}
                                         </p>
-                                        {/* ここに将来「読了」ボタンが入る */}
+                                        {book.status !== "completed" && (
+                                            <button
+                                                onClick={() =>
+                                                    handleCompleteClick(
+                                                        book.bookId,
+                                                    )
+                                                }
+                                                className="mt-2 bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded-full text-sm focus:outline-none focus:shadow-outline"
+                                            >
+                                                読了！
+                                            </button>
+                                        )}
                                     </li>
                                 ))}
                             </ul>

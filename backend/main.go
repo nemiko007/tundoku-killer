@@ -76,6 +76,9 @@ func main() {
 	// 書籍関連のエンドポイント
 	http.HandleFunc("/api/books", corsMiddleware(handleBooks))
 
+	// 読了処理のエンドポイント
+	http.HandleFunc("/api/books/complete", corsMiddleware(handleCompleteBook))
+
 	// GitHub Actionsからの定期実行用エンドポイント (Cron)
 	http.HandleFunc("/api/cron/check", corsMiddleware(handleCheckDeadlines))
 
@@ -248,6 +251,49 @@ func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Book registered successfully", "bookId": book.BookID})
+}
+
+// handleCompleteBook は書籍のステータスを "completed" に更新する
+func handleCompleteBook(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	ctx := context.Background()
+
+	var reqBody struct {
+		BookID string `json:"bookId"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if reqBody.BookID == "" {
+		http.Error(w, "bookId is required", http.StatusBadRequest)
+		return
+	}
+
+	// 書籍ドキュメントの参照を取得
+	docRef := firestoreClient.Collection("books").Doc(reqBody.BookID)
+
+	// ステータスを "completed" に更新
+	_, err := docRef.Update(ctx, []firestore.Update{
+		{Path: "status", Value: "completed"},
+	})
+
+	if err != nil {
+		log.Printf("Error updating book status: %v", err)
+		http.Error(w, "Failed to update book status", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Book %s marked as completed.", reqBody.BookID)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Book marked as completed"})
 }
 
 // handleCheckDeadlines は定期的に実行され、期限切れの未読本をチェックする
