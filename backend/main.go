@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -25,13 +23,6 @@ var (
 type LineAuthRequest struct {
 	LineAccessToken string `json:"lineAccessToken"`
 	LineUserID      string `json:"lineUserID"` // LINE User IDも受け取る
-}
-
-// WorkflowPayload はUpstash Workflowから送られてくるペイロードの構造体
-type WorkflowPayload struct {
-	BookID      string `json:"bookId"`
-	UserID      string `json:"userId"`
-	InsultLevel int    `json:"insultLevel"`
 }
 
 // Book は書籍データを表す構造体
@@ -83,8 +74,8 @@ func main() {
 	// 書籍登録エンドポイントの追加
 	http.HandleFunc("/api/books", corsMiddleware(handleRegisterBook))
 
-	// Upstash Workflowからの煽り実行エンドポイントの追加
-	http.HandleFunc("/api/workflow/execute", corsMiddleware(handleWorkflowExecute))
+	// GitHub Actionsからの定期実行用エンドポイント (Cron)
+	http.HandleFunc("/api/cron/check", corsMiddleware(handleCheckDeadlines))
 
 	fmt.Println("Server starting on port 8081...")
 	log.Fatal(http.ListenAndServe(":8081", nil))
@@ -195,83 +186,8 @@ func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Upstash Workflowをキックする
-	qstashURL := os.Getenv("QSTASH_URL")
-	qstashToken := os.Getenv("QSTASH_TOKEN")
-	// トークンのクリーニング: スペース、Bearerプレフィックス、引用符を除去
-	qstashToken = strings.TrimSpace(qstashToken)
-	qstashToken = strings.TrimPrefix(qstashToken, "Bearer ")
-	qstashToken = strings.TrimSpace(qstashToken)
-	qstashToken = strings.Trim(qstashToken, "\"'")
-
-	if qstashURL == "" || qstashToken == "" {
-		http.Error(w, "QSTASH_URL and QSTASH_TOKEN environment variables must be set", http.StatusInternalServerError)
-		return
-	} else {
-		// 煽り実行エンドポイントのURL (バックエンドがRenderにデプロイされた場合のURL)
-		renderExternalHostname := os.Getenv("RENDER_EXTERNAL_HOSTNAME")
-		if renderExternalHostname == "" {
-			http.Error(w, "RENDER_EXTERNAL_HOSTNAME environment variable not set for Upstash Workflow callback URL.", http.StatusInternalServerError)
-			return
-		}
-		if !strings.HasPrefix(renderExternalHostname, "http") {
-			renderExternalHostname = "https://" + renderExternalHostname
-		}
-		targetURL := fmt.Sprintf("%s/api/workflow/execute", strings.TrimSuffix(renderExternalHostname, "/"))
-
-		// Upstash Workflowに送るペイロード
-		workflowPayload := map[string]string{
-			"bookId":      docRef.ID,
-			"userId":      book.UserID,
-			"insultLevel": fmt.Sprintf("%d", book.InsultLevel),
-		}
-		jsonPayload, _ := json.Marshal(workflowPayload)
-
-		// 煽り開始までの遅延時間 (ミリ秒)
-		// 例: 期限の1日前から煽り始める場合 (ここでは期限時刻に設定)
-		delayMs := book.Deadline.UnixMilli() - time.Now().UnixMilli()
-		if delayMs < 0 {
-			delayMs = 0 // 期限が過ぎている場合はすぐに実行
-		}
-
-		// QStashのURLがベースURLのみ(例: https://qstash.upstash.io)の場合に対応
-		if !strings.Contains(qstashURL, "/v2/publish") {
-			qstashURL = strings.TrimSuffix(qstashURL, "/") + "/v2/publish"
-		}
-
-		// QStashへのリクエストURLを作成 (宛先URLをパスに含める)
-		// 例: https://qstash.upstash.io/v2/publish/https://my-backend.com/api/workflow/execute
-		publishURL := fmt.Sprintf("%s/%s", strings.TrimSuffix(qstashURL, "/"), targetURL)
-
-		// デバッグ用: トークンの一部を出力して確認 (セキュリティのため大部分は隠す)
-		if len(qstashToken) > 10 {
-			log.Printf("Using QStash Token: %s... (len: %d)", qstashToken[:5], len(qstashToken))
-		}
-
-		log.Printf("Sending Upstash request to: %s", publishURL)
-		req, err := http.NewRequestWithContext(ctx, "POST", publishURL, bytes.NewBuffer(jsonPayload))
-		if err != nil {
-			log.Printf("Error creating Upstash Workflow request: %v", err)
-		} else {
-			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set("Authorization", "Bearer "+qstashToken)
-			req.Header.Set("Upstash-Delay", fmt.Sprintf("%dms", delayMs)) // ms単位で遅延を指定
-
-			client := &http.Client{}
-			resp, err := client.Do(req)
-			if err != nil {
-				log.Printf("Error sending request to Upstash Workflow: %v", err)
-			} else {
-				defer resp.Body.Close()
-				if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusCreated {
-					respBody, _ := io.ReadAll(resp.Body)
-					log.Printf("Upstash Workflow responded with status %d: %s", resp.StatusCode, string(respBody))
-				} else {
-					log.Printf("Successfully scheduled Upstash Workflow for book %s", book.Title)
-				}
-			}
-		}
-	}
+	// Upstashへのスケジュール登録処理は削除 (GitHub ActionsのCronで定期チェックするため)
+	log.Printf("Book registered: %s (Deadline: %v)", book.Title, book.Deadline)
 
 	// 成功レスポンスを返す
 	w.Header().Set("Content-Type", "application/json")
@@ -279,29 +195,53 @@ func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Book registered successfully", "bookId": book.BookID})
 }
 
-// handleWorkflowExecute はUpstash Workflowからのリクエストを受け取り、煽りメッセージを生成・送信する
-func handleWorkflowExecute(w http.ResponseWriter, r *http.Request) {
-	// リクエストボディのパース
-	var payload WorkflowPayload
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Error reading request body: %v", err), http.StatusBadRequest)
-		return
-	}
-	if err := json.Unmarshal(body, &payload); err != nil {
-		http.Error(w, fmt.Sprintf("Error unmarshalling request body: %v", err), http.StatusBadRequest)
+// handleCheckDeadlines は定期的に実行され、期限切れの未読本をチェックする
+func handleCheckDeadlines(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+
+	// 簡易的な認証: 環境変数 CRON_SECRET と一致するか確認
+	cronSecret := os.Getenv("CRON_SECRET")
+	authHeader := r.Header.Get("Authorization")
+	if cronSecret != "" && authHeader != "Bearer "+cronSecret {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	log.Printf("Received workflow execute request for bookId: %s, userId: %s, insultLevel: %d", payload.BookID, payload.UserID, payload.InsultLevel)
+	// Firestoreから "unread" の本を取得
+	// 複合インデックスを避けるため、まずはステータスでフィルタし、期限はアプリ側でチェックする
+	iter := firestoreClient.Collection("books").Where("status", "==", "unread").Documents(ctx)
+	defer iter.Stop()
 
-	// TODO: ここに煽り実行ロジックを実装
-	// 1. Firestoreから書籍情報を取得
-	// 2. 書籍が未読の場合のみ処理 (status == "unread")
-	// 3. Gemini APIを叩いて煽り文を生成
-	// 4. LINE Messaging APIでユーザーにメッセージを送信
-	// 5. Firestoreの書籍ステータスを更新 (例: "insulted")
+	count := 0
+	for {
+		doc, err := iter.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Printf("Error iterating documents: %v", err)
+			http.Error(w, "Error querying database", http.StatusInternalServerError)
+			return
+		}
+
+		var book Book
+		if err := doc.DataTo(&book); err != nil {
+			log.Printf("Error parsing book data: %v", err)
+			continue
+		}
+
+		// 期限切れチェック
+		if book.Deadline.Before(time.Now()) {
+			log.Printf("Found expired book: %s (ID: %s, User: %s, InsultLevel: %d)", book.Title, book.BookID, book.UserID, book.InsultLevel)
+			count++
+
+			// TODO: ここに煽り実行ロジックを実装
+			// 1. Gemini APIを叩いて煽り文を生成
+			// 2. LINE Messaging APIでユーザーにメッセージを送信
+			// 3. Firestoreの書籍ステータスを更新 (例: "insulted")
+		}
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"message": "Workflow execute received and processed (mocked)."})
+	json.NewEncoder(w).Encode(map[string]string{"message": fmt.Sprintf("Checked deadlines. Found %d expired books.", count)})
 }

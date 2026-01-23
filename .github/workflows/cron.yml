@@ -1,0 +1,17 @@
+name: Check Deadlines
+
+on:
+  schedule:
+    # 1時間ごとに実行 (必要に応じて変更してください)
+    - cron: '0 * * * *'
+  workflow_dispatch: # 手動実行ボタンも有効化
+
+jobs:
+  cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Backend Cron Endpoint
+        run: |
+          curl -X POST ${{ secrets.RENDER_EXTERNAL_HOSTNAME }}/api/cron/check \
+          -H "Authorization: Bearer ${{ amxdndndjenjdvcgdvcwvfehhrfgfigyhcbhwbdcbdjbshfcvjehchdvhsvvhv }}" \
+          -H "Content-Type: application/json"
