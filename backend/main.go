@@ -270,7 +270,7 @@ func generateInsult(book Book) (string, error) {
 		return "", fmt.Errorf("GEMINI_API_KEY is not set")
 	}
 
-	url := "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=" + apiKey
+	url := "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + apiKey
 
 	prompt := fmt.Sprintf("積読本「%s」(著者: %s) の期限が切れました。罵倒レベル%d (最大5) で、早く読むように煽るメッセージを短く(50文字以内)作成してください。返答はメッセージ内容のみにしてください。", book.Title, book.Author, book.InsultLevel)
 
