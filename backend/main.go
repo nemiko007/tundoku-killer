@@ -198,6 +198,7 @@ func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 	// Upstash Workflowをキックする
 	qstashURL := os.Getenv("QSTASH_URL")
 	qstashToken := os.Getenv("QSTASH_TOKEN")
+	qstashToken = strings.TrimSpace(qstashToken)
 	if qstashURL == "" || qstashToken == "" {
 		http.Error(w, "QSTASH_URL and QSTASH_TOKEN environment variables must be set", http.StatusInternalServerError)
 		return
@@ -207,6 +208,9 @@ func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 		if renderExternalHostname == "" {
 			http.Error(w, "RENDER_EXTERNAL_HOSTNAME environment variable not set for Upstash Workflow callback URL.", http.StatusInternalServerError)
 			return
+		}
+		if !strings.HasPrefix(renderExternalHostname, "http") {
+			renderExternalHostname = "https://" + renderExternalHostname
 		}
 		targetURL := fmt.Sprintf("%s/api/workflow/execute", strings.TrimSuffix(renderExternalHostname, "/"))
 
