@@ -11,12 +11,12 @@ import (
 	"os"
 	"time"
 
-	firebase "firebase.google.com/go/v4"
 	"cloud.google.com/go/firestore"
+	firebase "firebase.google.com/go/v4"
 	"google.golang.org/api/option"
 )
 
-var firebaseApp *firebase.App       // Firebase Appインスタンスをグローバル変数にする
+var firebaseApp *firebase.App         // Firebase Appインスタンスをグローバル変数にする
 var firestoreClient *firestore.Client // Firestoreクライアントをグローバル変数にする
 
 type LineAuthRequest struct {
@@ -196,12 +196,12 @@ func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 	qstashURL := os.Getenv("QSTASH_URL")
 	qstashToken := os.Getenv("QSTASH_TOKEN")
 	if qstashURL == "" || qstashToken == "" {
-		log.Printf("QSTASH_URL or QSTASH_TOKEN environment variable not set. Skipping Upstash Workflow.")
+		http.Error(w, "QSTASH_URL and QSTASH_TOKEN environment variables must be set", http.StatusInternalServerError)
+		return
 	} else {
 		// 煽り実行エンドポイントのURL (バックエンドがRenderにデプロイされた場合のURL)
 		renderExternalHostname := os.Getenv("RENDER_EXTERNAL_HOSTNAME")
 		if renderExternalHostname == "" {
-			log.Printf("RENDER_EXTERNAL_HOSTNAME environment variable not set. Skipping Upstash Workflow callback URL setup.")
 			http.Error(w, "RENDER_EXTERNAL_HOSTNAME environment variable not set for Upstash Workflow callback URL.", http.StatusInternalServerError)
 			return
 		}
@@ -209,8 +209,8 @@ func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 
 		// Upstash Workflowに送るペイロード
 		workflowPayload := map[string]string{
-			"bookId": docRef.ID,
-			"userId": book.UserID,
+			"bookId":      docRef.ID,
+			"userId":      book.UserID,
 			"insultLevel": fmt.Sprintf("%d", book.InsultLevel),
 		}
 		jsonPayload, _ := json.Marshal(workflowPayload)
