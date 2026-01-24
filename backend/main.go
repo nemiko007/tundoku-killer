@@ -231,19 +231,14 @@ func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 		book.Status = "unread"
 	}
 
-	// Firestoreに書籍データを保存
-	docRef, _, err := firestoreClient.Collection("books").Add(ctx, book)
+	// 新しいドキュメント参照を作成し、そのIDをbook.BookIDに設定
+	docRef := firestoreClient.Collection("books").NewDoc()
+	book.BookID = docRef.ID
+
+	// Book構造体全体をFirestoreに保存
+	_, err = docRef.Set(ctx, book)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("error saving book to Firestore: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	// 保存した書籍のFirestoreドキュメントIDをBook構造体に設定
-	book.BookID = docRef.ID
-	_, err = docRef.Set(ctx, book) // ドキュメントIDをフィールドとして更新
-	if err != nil {
-		log.Printf("Error updating book with BookID: %v", err)
-		http.Error(w, fmt.Sprintf("error updating book with BookID: %v", err), http.StatusInternalServerError)
 		return
 	}
 
