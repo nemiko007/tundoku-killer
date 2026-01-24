@@ -12,8 +12,11 @@ import (
 	"os"
 	"time"
 
-	"cloud.google.com/go/firestore"
-	firebase "firebase.google.com/go/v4"
+		"cloud.google.com/go/firestore"
+
+		"google.golang.org/api/iterator"
+
+		firebase "firebase.google.com/go/v4"
 	"google.golang.org/api/option"
 )
 
@@ -181,11 +184,11 @@ func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 	var books []Book
 	for {
 		doc, err := iter.Next()
-		if err == io.EOF {
+		if err == io.EOF || err == iterator.Done { // firestore.Doneも追加でチェック！
 			break
 		}
 		if err != nil {
-			log.Printf("Error iterating documents: %v", err)
+			log.Printf("Error iterating documents: %v (Type: %T)", err, err) // エラーの型もログに出す！
 			http.Error(w, fmt.Sprintf("Failed to retrieve books: %v", err), http.StatusInternalServerError)
 			return
 		}
