@@ -250,7 +250,7 @@ function App() {
             </h1>
 
             {isLoggedIn && firebaseUser ? (
-                <div className="bg-pink-700 p-8 rounded-xl shadow-neon w-full max-w-md border-2 border-pink-300 transform transition-transform duration-300 hover:scale-105">
+                <div className="bg-pink-700 p-8 rounded-xl shadow-lg drop-shadow-md w-full max-w-md border-2 border-pink-300 transform transition-transform duration-300 hover:scale-105" style={{ boxShadow: '0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff' }}>
                     <p className="text-2xl font-black text-pink-200 mb-4 text-center drop-shadow-md">
                         💖ようこそ、{lineProfile?.displayName}さま！💖
                     </p>
@@ -350,7 +350,7 @@ function App() {
                         </button>
                     </form>
 
-                    <div className="mt-10 p-6 bg-pink-700 rounded-xl shadow-neon border-2 border-pink-300">
+                    <div className="mt-10 p-6 bg-pink-700 rounded-xl shadow-lg drop-shadow-md border-2 border-pink-300" style={{ boxShadow: '0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff' }}>
                         <h2 className="text-3xl font-black text-pink-200 mb-6 text-center drop-shadow-md">
                             💖登録した本一覧💖
                         </h2>
@@ -411,7 +411,7 @@ function App() {
                     </div>
                 </div>
             ) : (
-                <div className="bg-purple-800 p-8 rounded-xl shadow-neon text-center border-2 border-purple-300">
+                <div className="bg-purple-800 p-8 rounded-xl shadow-lg drop-shadow-md text-center border-2 border-purple-300" style={{ boxShadow: '0 0 10px #8a2be2, 0 0 20px #8a2be2, 0 0 30px #8a2be2' }}>
                     <p className="text-xl text-pink-200 mb-4 font-bold animate-pulse">
                         まだLIFFにログインしてないよ〜🥺
                     </p>
