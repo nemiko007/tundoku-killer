@@ -354,7 +354,7 @@ function App() {
                         </div>
                         <button
                             type="submit"
-                            className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-white font-black py-3 px-6 rounded-full w-full focus:outline-none focus:shadow-outline transform transition-transform duration-300 hover:scale-105 text-lg shadow-xl uppercase tracking-wider"
+                            className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-white font-black py-3 px-6 rounded-full w-full focus:outline-none focus:shadow-outline transform transition-transform duration-300 text-lg shadow-xl uppercase tracking-wider"
                         >
                             💖書籍を登録するしかなくない？！💖
                         </button>
