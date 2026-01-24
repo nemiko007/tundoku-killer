@@ -201,9 +201,6 @@ function App() {
     };
 
     const handleCompleteClick = async (bookId: string) => {
-        // UIから対象の書籍を即座に削除（オプティミスティックUIアップデート）
-        setBooks((prevBooks) => prevBooks.filter((b) => b.bookId !== bookId));
-
         try {
             const response = await fetch(
                 "https://tundoku-killer.onrender.com/api/books/complete",
@@ -217,15 +214,23 @@ function App() {
             );
 
             if (!response.ok) {
-                // もしAPI呼び出しが失敗したら、UIを元に戻す（今回は簡略化のため省略）
-                console.error("Failed to mark book as completed.");
-                // 必要であれば、削除した書籍をstateに戻すロジックをここに追加
-                // setError('読了処理に失敗しました。ページをリロードしてください。');
+                const errorBody = await response.text();
+                const errorMessage = `Failed to mark book as completed. Status: ${response.status}. Body: ${errorBody}`;
+                console.error(errorMessage);
+                throw new Error(errorMessage);
             }
-            // 成功しても特に何もしない（UIは更新済みのため）
-        } catch (err) {
+
+            // UIの書籍ステータスを更新
+            setBooks((prevBooks) =>
+                prevBooks.map((book) =>
+                    book.bookId === bookId ? { ...book, status: "completed" } : book
+                )
+            );
+        } catch (err: any) {
             console.error("読了処理エラー:", err);
-            // ここでもUIを元に戻す処理が必要
+            setError(
+                err.message || "読了処理中に予期せぬエラーが発生しました。",
+            );
         }
     };
 
@@ -244,6 +249,9 @@ function App() {
             </div>
         );
     }
+
+    const completedBooks = books.filter((book) => book.status === "completed");
+    const unreadBooks = books.filter((book) => book.status !== "completed");
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-pink-400 via-purple-500 to-indigo-600 text-white">
@@ -354,14 +362,14 @@ function App() {
 
                     <div className="mt-10 p-6 bg-pink-700 rounded-xl shadow-lg drop-shadow-md border-2 border-pink-300" style={{ boxShadow: '0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff' }}>
                         <h2 className="text-3xl font-black text-pink-200 mb-6 text-center drop-shadow-md">
-                            💖登録した本一覧💖
+                            💖未読・読書中の本💖
                         </h2>
-                        {books.length > 0 ? (
+                        {unreadBooks.length > 0 ? (
                             <ul className="space-y-6">
-                                {books.map((book) => (
+                                {unreadBooks.map((book) => (
                                     <li
                                         key={book.bookId}
-                                        className="bg-purple-800 p-5 rounded-lg shadow-lg border-2 border-purple-400 transform transition-transform duration-300 hover:scale-105"
+                                        className="bg-purple-800 p-5 rounded-lg shadow-lg border-2 border-purple-400 transform transition-transform duration-300"
                                     >
                                         <h3 className="text-xl font-black text-yellow-300 mb-1">
                                             {book.title}
@@ -411,6 +419,42 @@ function App() {
                             </p>
                         )}
                     </div>
+
+                    <div className="mt-10 p-6 bg-pink-700 rounded-xl shadow-lg drop-shadow-md border-2 border-pink-300" style={{ boxShadow: '0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff' }}>
+                        <h2 className="text-3xl font-black text-pink-200 mb-6 text-center drop-shadow-md">
+                            💖読了済みの本💖
+                        </h2>
+                        {completedBooks.length > 0 ? (
+                            <ul className="space-y-6">
+                                {completedBooks.map((book) => (
+                                    <li
+                                        key={book.bookId}
+                                        className="bg-green-800 p-5 rounded-lg shadow-lg border-2 border-green-400 transform transition-transform duration-300"
+                                    >
+                                        <h3 className="text-xl font-black text-yellow-300 mb-1">
+                                            {book.title}
+                                        </h3>
+                                        <p className="text-green-100 text-sm">
+                                            著者: {book.author}
+                                        </p>
+                                        <p className="text-green-200 text-xs mt-1">
+                                            読了日:{" "}
+                                            {new Date(
+                                                book.deadline,
+                                            ).toLocaleDateString()}
+                                        </p>
+                                        <p className="text-sm font-black mt-2 uppercase text-green-300">
+                                            ステータス: 読了済！天才！
+                                        </p>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-center text-pink-200 mt-4 text-lg font-bold">
+                                まだ読了済みの本はないみたい？🥺
+                            </p>
+                        )}
+                    </div>
                 </div>
             ) : (
                 <div className="bg-purple-800 p-8 rounded-xl shadow-lg drop-shadow-md text-center border-2 border-purple-300" style={{ boxShadow: '0 0 10px #8a2be2, 0 0 20px #8a2be2, 0 0 30px #8a2be2' }}>
@@ -427,6 +471,7 @@ function App() {
             )}
         </div>
     );
+
 }
 
 export default App;
