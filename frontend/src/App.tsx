@@ -108,10 +108,10 @@ function App() {
                     `https://tundoku-killer.onrender.com/api/books?userId=${userCredential.user.uid}`,
                 );
                 if (!booksResponse.ok) {
-                    // エラーレスポンスの本文を読んでみる
                     const errorBody = await booksResponse.text();
-                    console.error("Failed to fetch books response:", errorBody);
-                    throw new Error("Failed to fetch books.");
+                    const errorMessage = `Failed to fetch books. Status: ${booksResponse.status}. Body: ${errorBody}`;
+                    console.error(errorMessage);
+                    throw new Error(errorMessage); // catchブロックでsetErrorに渡す
                 }
                 const booksData = await booksResponse.json();
                 setBooks(booksData || []); // データがnullの場合も考慮して空配列をセット

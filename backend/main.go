@@ -186,7 +186,7 @@ func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 		}
 		if err != nil {
 			log.Printf("Error iterating documents: %v", err)
-			http.Error(w, "Failed to retrieve books", http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Failed to retrieve books: %v", err), http.StatusInternalServerError)
 			return
 		}
 
