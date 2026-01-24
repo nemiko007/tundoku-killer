@@ -270,11 +270,13 @@ func handleCompleteBook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		bodyBytes, _ := io.ReadAll(r.Body) // Read body again for logging (NewDecoder consumes it)
+		http.Error(w, fmt.Sprintf("Invalid request body: %v, received: %s", err, string(bodyBytes)), http.StatusBadRequest)
 		return
 	}
 
 	if reqBody.BookID == "" {
+		log.Printf("BookID is empty in request body for /api/books/complete")
 		http.Error(w, "bookId is required", http.StatusBadRequest)
 		return
 	}
