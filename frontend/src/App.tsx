@@ -260,7 +260,7 @@ function App() {
             </h1>
 
             {isLoggedIn && firebaseUser ? (
-                <div className="bg-pink-700 p-8 rounded-xl shadow-lg drop-shadow-md w-full max-w-md border-2 border-pink-300 transform transition-transform duration-300 hover:scale-105" style={{ boxShadow: '0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff' }}>
+                <div className="bg-pink-700 p-8 rounded-xl shadow-lg drop-shadow-md w-full max-w-md border-2 border-pink-300 transform transition-transform duration-300" style={{ boxShadow: '0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff' }}>
                     <p className="text-2xl font-black text-pink-200 mb-4 text-center drop-shadow-md">
                         💖ようこそ、{lineProfile?.displayName}さま！💖
                     </p>
