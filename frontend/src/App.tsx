@@ -114,6 +114,7 @@ function App() {
                     throw new Error(errorMessage); // catchブロックでsetErrorに渡す
                 }
                 const booksData = await booksResponse.json();
+                console.log("Fetched books:", booksData);
                 setBooks(booksData || []); // データがnullの場合も考慮して空配列をセット
             } catch (err: any) {
                 console.error("LIFF/Firebase login error:", err);
@@ -182,6 +183,7 @@ function App() {
                 bookId: result.bookId, // バックエンドから返されたbookId
             };
             setBooks((prevBooks) => [...prevBooks, newBook]);
+            console.log("Registered bookId:", result.bookId);
 
             // フォームをクリア
             setTitle("");
