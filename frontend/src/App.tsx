@@ -229,53 +229,53 @@ function App() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-100 text-lg font-bold">
-                Loading...
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-400 via-purple-500 to-indigo-600 text-white text-3xl font-bold animate-pulse">
+                💖 Loading... 💖
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-red-100 text-red-700 text-lg font-bold p-4">
-                Error: {error}
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-500 to-pink-500 text-white text-2xl font-bold p-4 text-center">
+                ぴえん🥺！エラーだよ！💦: {error}
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
-            <h1 className="text-4xl font-bold text-gray-800 mb-6">
-                ツンドク・キラー
+        <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-pink-400 via-purple-500 to-indigo-600 text-white">
+            <h1 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-400 to-purple-500 mb-8 drop-shadow-lg animate-pulse">
+                ツンドク・キラー🔥
             </h1>
 
             {isLoggedIn && firebaseUser ? (
-                <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-                    <p className="text-xl font-semibold mb-4 text-center">
-                        ようこそ、{lineProfile?.displayName}さん！💖
+                <div className="bg-pink-700 p-8 rounded-xl shadow-neon w-full max-w-md border-2 border-pink-300 transform transition-transform duration-300 hover:scale-105">
+                    <p className="text-2xl font-black text-pink-200 mb-4 text-center drop-shadow-md">
+                        💖ようこそ、{lineProfile?.displayName}さま！💖
                     </p>
                     {lineProfile?.pictureUrl && (
                         <img
                             src={lineProfile.pictureUrl}
                             alt="Profile"
-                            className="w-24 h-24 rounded-full mx-auto mb-4"
+                            className="w-28 h-28 rounded-full mx-auto mb-5 border-4 border-pink-300 shadow-md transform transition-transform duration-300 hover:scale-110"
                         />
                     )}
-                    <p className="text-gray-700 text-sm mb-2">
-                        Firebase UID: {firebaseUser.uid}
+                    <p className="text-purple-200 text-sm mb-2 text-center">
+                        キミのFirebase UID: <span className="font-bold text-pink-100">{firebaseUser.uid}</span>
                     </p>
-                    <p className="text-gray-600 text-sm mb-6">
-                        LIFFログインとFirebase連携が完了しました。
+                    <p className="text-purple-300 text-sm mb-6 text-center">
+                        LIFFログインとFirebase連携、完璧じゃん！天才！✌️
                     </p>
 
-                    <h2 className="text-2xl font-bold mb-4 text-center">
-                        書籍を登録する
+                    <h2 className="text-3xl font-black text-pink-200 mb-6 text-center drop-shadow-md">
+                        💖書籍を登録するしかなくない？💖
                     </h2>
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-5">
                         <div>
                             <label
                                 htmlFor="title"
-                                className="block text-gray-700 text-sm font-bold mb-2"
+                                className="block text-pink-100 text-base font-bold mb-2 drop-shadow-sm"
                             >
                                 タイトル:
                             </label>
@@ -284,14 +284,14 @@ function App() {
                                 id="title"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
-                                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                className="shadow-lg appearance-none border-2 border-pink-300 rounded-lg w-full py-3 px-4 text-gray-800 leading-tight focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition-all duration-200"
                                 required
                             />
                         </div>
                         <div>
                             <label
                                 htmlFor="author"
-                                className="block text-gray-700 text-sm font-bold mb-2"
+                                className="block text-pink-100 text-base font-bold mb-2 drop-shadow-sm"
                             >
                                 著者:
                             </label>
@@ -300,14 +300,14 @@ function App() {
                                 id="author"
                                 value={author}
                                 onChange={(e) => setAuthor(e.target.value)}
-                                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                className="shadow-lg appearance-none border-2 border-pink-300 rounded-lg w-full py-3 px-4 text-gray-800 leading-tight focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition-all duration-200"
                                 required
                             />
                         </div>
                         <div>
                             <label
                                 htmlFor="deadline"
-                                className="block text-gray-700 text-sm font-bold mb-2"
+                                className="block text-pink-100 text-base font-bold mb-2 drop-shadow-sm"
                             >
                                 読了期限:
                             </label>
@@ -316,14 +316,14 @@ function App() {
                                 id="deadline"
                                 value={deadline}
                                 onChange={(e) => setDeadline(e.target.value)}
-                                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                className="shadow-lg appearance-none border-2 border-pink-300 rounded-lg w-full py-3 px-4 text-gray-800 leading-tight focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition-all duration-200"
                                 required
                             />
                         </div>
                         <div>
                             <label
                                 htmlFor="insultLevel"
-                                className="block text-gray-700 text-sm font-bold mb-2"
+                                className="block text-pink-100 text-base font-bold mb-2 drop-shadow-sm"
                             >
                                 煽りレベル:
                             </label>
@@ -333,7 +333,7 @@ function App() {
                                 onChange={(e) =>
                                     setInsultLevel(Number(e.target.value))
                                 }
-                                className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                className="shadow-lg border-2 border-pink-300 rounded-lg w-full py-3 px-4 text-gray-800 leading-tight focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition-all duration-200"
                             >
                                 <option value={1}>1 (やさしく)</option>
                                 <option value={2}>2 (ちょっと煽る)</option>
@@ -344,46 +344,49 @@ function App() {
                         </div>
                         <button
                             type="submit"
-                            className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-full w-full focus:outline-none focus:shadow-outline"
+                            className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-white font-black py-3 px-6 rounded-full w-full focus:outline-none focus:shadow-outline transform transition-transform duration-300 hover:scale-105 text-lg shadow-xl uppercase tracking-wider"
                         >
-                            書籍を登録！
+                            💖書籍を登録するしかなくない？！💖
                         </button>
                     </form>
 
-                    <div className="mt-8">
-                        <h2 className="text-2xl font-bold mb-4 text-center">
-                            登録した本一覧
+                    <div className="mt-10 p-6 bg-pink-700 rounded-xl shadow-neon border-2 border-pink-300">
+                        <h2 className="text-3xl font-black text-pink-200 mb-6 text-center drop-shadow-md">
+                            💖登録した本一覧💖
                         </h2>
                         {books.length > 0 ? (
-                            <ul className="space-y-4">
+                            <ul className="space-y-6">
                                 {books.map((book) => (
                                     <li
                                         key={book.bookId}
-                                        className="bg-gray-50 p-4 rounded-lg shadow-sm"
+                                        className="bg-purple-800 p-5 rounded-lg shadow-lg border-2 border-purple-400 transform transition-transform duration-300 hover:scale-105"
                                     >
-                                        <h3 className="text-lg font-bold text-gray-800">
+                                        <h3 className="text-xl font-black text-yellow-300 mb-1">
                                             {book.title}
                                         </h3>
-                                        <p className="text-gray-600">
+                                        <p className="text-pink-100 text-sm">
                                             著者: {book.author}
                                         </p>
-                                        <p className="text-sm text-gray-500">
+                                        <p className="text-purple-200 text-xs mt-1">
                                             期限:{" "}
                                             {new Date(
                                                 book.deadline,
                                             ).toLocaleDateString()}
+                                            {book.status !== "completed" && new Date(book.deadline) < new Date() && (
+                                                <span className="ml-2 text-red-400 font-bold">期限切れ！💦</span>
+                                            )}
                                         </p>
                                         <p
-                                            className={`text-sm font-semibold ${
+                                            className={`text-sm font-black mt-2 uppercase ${
                                                 book.status === "insulted"
-                                                    ? "text-red-500"
+                                                    ? "text-red-400 animate-pulse"
                                                     : book.status ===
                                                         "completed"
-                                                      ? "text-blue-500"
-                                                      : "text-yellow-500"
+                                                      ? "text-green-300"
+                                                      : "text-yellow-300"
                                             }`}
                                         >
-                                            ステータス: {book.status}
+                                            ステータス: {book.status === "unread" ? "未読" : book.status === "reading" ? "読書中" : book.status === "completed" ? "読了済" : "煽られ中"}
                                         </p>
                                         {book.status !== "completed" && (
                                             <button
@@ -392,31 +395,31 @@ function App() {
                                                         book.bookId,
                                                     )
                                                 }
-                                                className="mt-2 bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded-full text-sm focus:outline-none focus:shadow-outline"
+                                                className="mt-4 bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-300 hover:to-blue-400 text-white font-black py-2 px-4 rounded-full text-sm focus:outline-none focus:shadow-outline transform transition-transform duration-300 hover:scale-110 shadow-md"
                                             >
-                                                読了！
+                                                読了！天才じゃん！✌️
                                             </button>
                                         )}
                                     </li>
                                 ))}
                             </ul>
                         ) : (
-                            <p className="text-center text-gray-500 mt-4">
-                                まだ登録された本はありません。
+                            <p className="text-center text-pink-200 mt-4 text-lg font-bold">
+                                まだ登録された本はないみたい？🥺 早く登録しよっ！
                             </p>
                         )}
                     </div>
                 </div>
             ) : (
-                <div className="bg-white p-8 rounded-lg shadow-md text-center">
-                    <p className="text-xl text-gray-700 mb-4">
-                        LIFFにログインしていません。
+                <div className="bg-purple-800 p-8 rounded-xl shadow-neon text-center border-2 border-purple-300">
+                    <p className="text-xl text-pink-200 mb-4 font-bold animate-pulse">
+                        まだLIFFにログインしてないよ〜🥺
                     </p>
                     <button
                         onClick={() => liff.login()}
-                        className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full focus:outline-none focus:shadow-outline"
+                        className="bg-pink-500 hover:bg-pink-400 text-white font-bold py-3 px-6 rounded-full focus:outline-none focus:shadow-outline transform transition-transform duration-300 hover:scale-110 shadow-lg text-lg"
                     >
-                        LINEでログイン
+                        LINEでログインするしかなくない？💖
                     </button>
                 </div>
             )}
