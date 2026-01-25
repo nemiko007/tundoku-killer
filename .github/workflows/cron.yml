@@ -3,7 +3,7 @@ name: Check Deadlines
 on:
     schedule:
         # 1時間に1回実行 (毎時5分)
-        - cron: "5 * * * *"
+        - cron: "23 * * * *"
     workflow_dispatch: # 手動実行ボタンも有効化
 
 jobs:
