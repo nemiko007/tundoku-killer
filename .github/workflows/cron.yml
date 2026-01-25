@@ -16,6 +16,6 @@ jobs:
                     echo "::error::RENDER_EXTERNAL_HOSTNAME secret is not set. Please set it in Settings > Secrets and variables > Actions."
                     exit 1
                   fi
-                  curl -X POST ${{ secrets.RENDER_EXTERNAL_HOSTNAME }}/api/cron/check \
+                  curl -sfS -X POST ${{ secrets.RENDER_EXTERNAL_HOSTNAME }}/api/cron/check \
                   -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
                   -H "Content-Type: application/json"
