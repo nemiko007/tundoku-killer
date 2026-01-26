@@ -6,6 +6,6 @@ aptPkgs = ["curl"]
 
 [[cron]]
 # 動作確認のため、1分おきか5分おきに設定してテストするのがおすすめ
-schedule = "*/5 * * * *" 
+schedule = "* * * * *" 
 # --max-time 600 (10分間) 応答を待つように変更
 command = "curl -sfS -X POST https://tundoku-killer.onrender.com/api/cron/check -H \"Authorization: Bearer ${CRON_SECRET}\" -H \"Content-Type: application/json\" --max-time 600"
