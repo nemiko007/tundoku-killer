@@ -1,5 +1,7 @@
 [build]
 builder = "nixpacks"
+# ルートに何もないので、無理やり「静的ファイル」として認識させる
+plan = { providers = ["staticfile"] }
 
 [phases.setup]
 aptPkgs = ["curl"]
@@ -9,5 +11,5 @@ cronSchedule = "0 * * * *"
 restartPolicyType = "NEVER"
 
 [start]
-# ファイルを介さないので Permission denied は絶対に起きません
+# Permission denied を避けるため、直接 curl を叩く
 cmd = "curl -v -X POST https://tundoku-killer.onrender.com/api/cron/check -H \"Authorization: Bearer ${CRON_SECRET}\" -H \"Content-Type: application/json\" --max-time 900"
