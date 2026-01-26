@@ -1,13 +1,10 @@
 [phases.setup]
 aptPkgs = ["curl"]
 
-[phases.build]
-cmds = ["chmod +x start.sh", "echo 'Build phase skipped.'"]
+# [start] は削除してOK！ 
+# これにより、無駄な常駐プロセス（start.sh）が動かなくなります。
 
-[start]
-cmd = "./start.sh"
-
-# ここから下が Railway への「定期実行」指示になります
 [[cron]]
-schedule = "* * * * *"
+# 動作確認のため、1分おきか5分おきに設定してテストするのがおすすめ
+schedule = "*/5 * * * *" 
 command = "curl -sfS -X POST https://tundoku-killer.onrender.com/api/cron/check -H \"Authorization: Bearer ${CRON_SECRET}\" -H \"Content-Type: application/json\" --connect-timeout 60"
