@@ -11,4 +11,4 @@ cmds = ["echo 'Build phase is explicitly skipped.'"]
 [start]
 # This is the only command that will run when the container starts.
 # It does nothing but wait forever, keeping the container alive for cron jobs.
-command = "sleep infinity"
+cmd = "sleep infinity"
