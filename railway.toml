@@ -1,5 +1,15 @@
-[[cron]]
-schedule = "* * * * *"
-# ${RAILWAY_STATIC_URL} はこのサービス自身のURLを指しますが、このサービスはWebサーバーではないため使用できません。
-# 呼び出したいバックエンドサービスの公開URL（例: my-backend-production.up.railway.app）を直接指定してください。
-command = "curl -sfS -X POST https://tundoku-killer.onrender.com/api/cron/check -H \"Authorization: Bearer ${CRON_SECRET}\" -H \"Content-Type: application/json\" --connect-timeout 60"
+[build]
+builder = "nixpacks"
+
+[phases.setup]
+aptPkgs = ["curl"]
+
+[deploy]
+# 1時間ごとに実行
+cronSchedule = "0 * * * *"
+# 1回実行したら終了する設定（重要）
+restartPolicyType = "NEVER"
+
+[start]
+# 実行したいコマンドをここに書く
+cmd = "curl -v -X POST https://tundoku-killer.onrender.com/api/cron/check -H \"Authorization: Bearer ${CRON_SECRET}\" -H \"Content-Type: application/json\" --max-time 600"
