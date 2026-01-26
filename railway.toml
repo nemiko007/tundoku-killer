@@ -1,3 +1,10 @@
+[phases.build]
+# chmod +x で start.sh に実行権限を与えます
+cmds = ["chmod +x start.sh", "echo 'Build finished'"]
+
+[start]
+cmd = "./start.sh"
+
 [build]
 builder = "nixpacks"
 
