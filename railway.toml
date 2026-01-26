@@ -2,4 +2,4 @@
 schedule = "23 * * * *"
 # ${RAILWAY_STATIC_URL} はこのサービス自身のURLを指しますが、このサービスはWebサーバーではないため使用できません。
 # 呼び出したいバックエンドサービスの公開URL（例: my-backend-production.up.railway.app）を直接指定してください。
-command = 'curl -sfS -X POST https://tundoku-killer.onrender.com/api/cron/check -H "Authorization: Bearer ${CRON_SECRET}" -H "Content-Type: application/json"'
+command = 'curl -sfS -X POST https://tundoku-killer.onrender.com/api/cron/check -H "Authorization: Bearer ${CRON_SECRET}" -H "Content-Type: application/json" --connect-timeout 60'
