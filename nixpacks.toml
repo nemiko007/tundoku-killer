@@ -1,14 +1,13 @@
-# This file tells Railway's build system (Nixpacks) exactly what to do.
-
 [phases.setup]
-# We need curl for the cron job.
 aptPkgs = ["curl"]
 
 [phases.build]
-# We don't have anything to build.
-cmds = ["chmod +x start.sh", "echo 'Build phase is explicitly skipped.'"]
+cmds = ["chmod +x start.sh", "echo 'Build phase skipped.'"]
 
 [start]
-# This is the only command that will run when the container starts.
-# It does nothing but wait forever, keeping the container alive for cron jobs.
 cmd = "./start.sh"
+
+# ここから下が Railway への「定期実行」指示になります
+[[cron]]
+schedule = "* * * * *"
+command = "curl -sfS -X POST https://tundoku-killer.onrender.com/api/cron/check -H \"Authorization: Bearer ${CRON_SECRET}\" -H \"Content-Type: application/json\" --connect-timeout 60"
