@@ -5,11 +5,9 @@ builder = "nixpacks"
 aptPkgs = ["curl"]
 
 [deploy]
-# 1時間に1回（毎時0分）に実行
 cronSchedule = "0 * * * *"
-# 1回実行したら終了し、勝手に再起動しないようにする
 restartPolicyType = "NEVER"
 
 [start]
-# 直接 curl を実行することで Permission denied を回避
+# ファイルを介さないので Permission denied は絶対に起きません
 cmd = "curl -v -X POST https://tundoku-killer.onrender.com/api/cron/check -H \"Authorization: Bearer ${CRON_SECRET}\" -H \"Content-Type: application/json\" --max-time 900"
