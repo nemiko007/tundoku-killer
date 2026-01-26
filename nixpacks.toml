@@ -1,11 +1,13 @@
 [phases.setup]
 aptPkgs = ["curl"]
 
-# [start] は削除してOK！ 
-# これにより、無駄な常駐プロセス（start.sh）が動かなくなります。
+[phases.build]
+cmds = ["chmod +x start.sh"]
+
+[start]
+cmd = "./start.sh"
 
 [[cron]]
-# 動作確認のため、1分おきか5分おきに設定してテストするのがおすすめ
-schedule = "* * * * *" 
-# --max-time 600 (10分間) 応答を待つように変更
-command = "curl -v -X POST https://tundoku-killer.onrender.com/api/cron/check -H \"Authorization: Bearer ${CRON_SECRET}\" -H \"Content-Type: application/json\" --max-time 600 -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)""
+schedule = "*/5 * * * *" 
+# -v で詳細を出し、実行結果を標準出力に強制的に流す
+command = "curl -v -X POST https://tundoku-killer.onrender.com/api/cron/check -H \"Authorization: Bearer ${CRON_SECRET}\" -H \"Content-Type: application/json\" --max-time 900 2>&1"
