@@ -1,2 +1,2 @@
 #!/bin/sh
-sleep infinity
+tail -f /dev/null
