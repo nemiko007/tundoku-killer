@@ -1,10 +1,3 @@
-[phases.build]
-# chmod +x で start.sh に実行権限を与えます
-cmds = ["chmod +x start.sh", "echo 'Build finished'"]
-
-[start]
-cmd = "./start.sh"
-
 [build]
 builder = "nixpacks"
 
@@ -12,11 +5,11 @@ builder = "nixpacks"
 aptPkgs = ["curl"]
 
 [deploy]
-# 1時間ごとに実行
+# 1時間に1回（毎時0分）に実行
 cronSchedule = "0 * * * *"
-# 1回実行したら終了する設定（重要）
+# 1回実行したら終了し、勝手に再起動しないようにする
 restartPolicyType = "NEVER"
 
 [start]
-# 実行したいコマンドをここに書く
-cmd = "curl -v -X POST https://tundoku-killer.onrender.com/api/cron/check -H \"Authorization: Bearer ${CRON_SECRET}\" -H \"Content-Type: application/json\" --max-time 600"
+# 直接 curl を実行することで Permission denied を回避
+cmd = "curl -v -X POST https://tundoku-killer.onrender.com/api/cron/check -H \"Authorization: Bearer ${CRON_SECRET}\" -H \"Content-Type: application/json\" --max-time 900"
