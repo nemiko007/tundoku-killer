@@ -1,0 +1,17 @@
+# This file tells Railway's build system (Nixpacks) exactly what to do.
+
+# We don't need any language providers like Go or Node.js.
+providers = []
+
+[phases.setup]
+# We don't need to install any system packages.
+aptPkgs = []
+
+[phases.build]
+# We don't have anything to build.
+cmds = ["echo 'Build phase is explicitly skipped.'"]
+
+[start]
+# This is the only command that will run when the container starts.
+# It does nothing but wait forever, keeping the container alive for cron jobs.
+command = "sleep infinity"
