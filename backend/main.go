@@ -12,11 +12,11 @@ import (
 	"os"
 	"time"
 
-		"cloud.google.com/go/firestore"
+	"cloud.google.com/go/firestore"
 
-		"google.golang.org/api/iterator"
+	"google.golang.org/api/iterator"
 
-		firebase "firebase.google.com/go/v4"
+	firebase "firebase.google.com/go/v4"
 	"google.golang.org/api/option"
 )
 
@@ -84,6 +84,9 @@ func main() {
 
 	// GitHub Actionsからの定期実行用エンドポイント (Cron)
 	http.HandleFunc("/api/cron/check", corsMiddleware(handleCheckDeadlines))
+
+	// 乱数のシードを初期化 (アプリケーション起動時に1回だけ行う)
+	rand.Seed(time.Now().UnixNano())
 
 	fmt.Println("Server starting on port 8081...")
 	log.Fatal(http.ListenAndServe(":8081", nil))
@@ -283,7 +286,6 @@ func handleCompleteBook(w http.ResponseWriter, r *http.Request) {
 	_, err := docRef.Update(ctx, []firestore.Update{
 		{Path: "status", Value: "completed"},
 	})
-
 	if err != nil {
 		log.Printf("Error updating book status: %v", err)
 		http.Error(w, "Failed to update book status", http.StatusInternalServerError)
@@ -308,9 +310,9 @@ func handleCheckDeadlines(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Firestoreから "unread" の本を取得
+	// Firestoreから "unread" または "insulted" の本を取得
 	// 複合インデックスを避けるため、まずはステータスでフィルタし、期限はアプリ側でチェックする
-	iter := firestoreClient.Collection("books").Where("status", "==", "unread").Documents(ctx)
+	iter := firestoreClient.Collection("books").Where("status", "in", []string{"unread", "insulted"}).Documents(ctx)
 	defer iter.Stop()
 
 	count := 0
@@ -365,9 +367,6 @@ func handleCheckDeadlines(w http.ResponseWriter, r *http.Request) {
 
 // generateInsult はあらかじめ用意された煽り文からランダムに1つを返す
 func generateInsult(book Book) (string, error) {
-	// 乱数のシードを初期化。毎回違う結果を得るために重要。
-	rand.New(rand.NewSource(time.Now().UnixNano()))
-
 	insultMessages := []string{
 		"その本、いつ読むの？もうオブジェになってない？w",
 		"積読タワー建設中？完成披露パーティーはいつですか？（早く読め）",
@@ -390,7 +389,7 @@ func generateInsult(book Book) (string, error) {
 	}
 
 	// ランダムにメッセージを選択
-	randomIndex := rand.Intn(len(insultMessages))
+	randomIndex := rand.Intn(len(insultMessages)) // グローバルのrandを使用
 
 	return insultMessages[randomIndex], nil
 }
