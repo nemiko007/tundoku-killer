@@ -1,19 +1,19 @@
 name: Hourly Cron Job
 
 on:
-  schedule:
-    # 毎時0分に実行 (UTC)
-    - cron: '0 * * * *'
-  # GitHubのUIから手動で実行できるようにする
-  workflow_dispatch:
+    schedule:
+        # 毎時0分に実行 (UTC)
+        - cron: "*/5 * * * *"
+    # GitHubのUIから手動で実行できるようにする
+    workflow_dispatch:
 
 jobs:
-  cron-job:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Send POST request
-        run: |
-          curl -v -X POST https://tundoku-killer.onrender.com/api/cron/check \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json" \
-            --max-time 900
+    cron-job:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Send POST request
+              run: |
+                  curl -v -X POST https://tundoku-killer.onrender.com/api/cron/check \
+                    -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+                    -H "Content-Type: application/json" \
+                    --max-time 900
