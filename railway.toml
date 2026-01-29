@@ -1,9 +1,0 @@
-[phases.setup]
-aptPkgs = ["curl"]
-
-[deploy]
-cronSchedule = "0 * * * *"
-restartPolicyType = "NEVER"
-
-[start]
-cmd = "curl -v -X POST https://tundoku-killer.onrender.com/api/cron/check -H \"Authorization: Bearer ${CRON_SECRET}\" -H \"Content-Type: application/json\" --max-time 900"
