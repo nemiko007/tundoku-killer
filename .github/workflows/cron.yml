@@ -11,9 +11,5 @@ jobs:
     cron-job:
         runs-on: ubuntu-latest
         steps:
-            - name: Send POST request
-              run: |
-                  curl -v -X POST https://tundoku-killer.onrender.com/api/cron/check \
-                    -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-                    -H "Content-Type: application/json" \
-                    --max-time 900
+            - name: Simple Echo
+              run: echo "Cron job is running!"
