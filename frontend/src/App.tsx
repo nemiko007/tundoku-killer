@@ -4,6 +4,7 @@ import liff from "@line/liff"; // LIFFをインポート
 import { signInWithCustomToken } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "./firebase"; // Firebaseの初期化ファイルをインポート
+import LineAddFriendButton from './components/LineAddFriendButton';
 
 interface LineUserProfile {
     userId: string;
@@ -258,6 +259,9 @@ function App() {
             <h1 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-100 via-pink-200 to-purple-300 mb-8 drop-shadow-lg animate-pulse">
                 ツンドク・キラー🔥
             </h1>
+            <div className="mb-8"> {/* タイトルとの間にマージンを追加 */}
+                <LineAddFriendButton lineId="@566nverw" />
+            </div>
 
             {isLoggedIn && firebaseUser ? (
                 <div className="bg-pink-700 p-8 rounded-xl shadow-lg drop-shadow-md w-full max-w-md border-2 border-pink-300 transform transition-transform duration-300" style={{ boxShadow: '0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff' }}>
@@ -469,6 +473,7 @@ function App() {
                     </button>
                 </div>
             )}
+
         </div>
     );
 
