@@ -38,6 +38,7 @@ function App() {
     const [author, setAuthor] = useState("");
     const [deadline, setDeadline] = useState(""); // YYYY-MM-DD 形式を想定
     const [insultLevel, setInsultLevel] = useState(3); // デフォルトを3に設定
+    const [editingBookId, setEditingBookId] = useState<string | null>(null); // 編集中の本ID
 
     useEffect(() => {
         const initializeLiffAndLogin = async () => {
@@ -148,57 +149,113 @@ function App() {
                 deadline: new Date(deadline).toISOString(), // ISO 8601形式に変換
                 insultLevel: Number(insultLevel),
                 userId: firebaseUser.uid,
+                bookId: editingBookId || "", // 編集時は既存のID
+                status: (editingBookId ? books.find(b => b.bookId === editingBookId)?.status : "unread") || "unread"
             };
 
-            const response = await fetch(
-                "https://tundoku-killer.onrender.com/api/books",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(bookData),
+            const url = editingBookId
+                ? "https://tundoku-killer.onrender.com/api/books"
+                : "https://tundoku-killer.onrender.com/api/books";
+            const method = editingBookId ? "PUT" : "POST";
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    "Content-Type": "application/json",
                 },
-            );
+                body: JSON.stringify(bookData),
+            });
 
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(
-                    errorData.message || "書籍登録に失敗しました。",
+                    errorData.message || (editingBookId ? "書籍の更新に失敗しました。" : "書籍登録に失敗しました。"),
                 );
             }
 
             const result = await response.json();
-            alert(result.message || "書籍を登録しました！");
+            alert(result.message || (editingBookId ? "書籍を更新しました！" : "書籍を登録しました！"));
 
-            // フロントのstateも更新して即時反映
-            // bookDataにはdeadlineがISO文字列で入っているが、フォームのstateは 'YYYY-MM-DD' 形式
-            // 表示と内部データ形式を合わせるため、ここで再構築
-            const newBook: Book = {
-                title: title,
-                author: author,
-                deadline: new Date(deadline).toISOString(),
-                status: "unread",
-                insultLevel: Number(insultLevel),
-                userId: firebaseUser.uid,
-                bookId: result.bookId, // バックエンドから返されたbookId
-            };
-            setBooks((prevBooks) => [...prevBooks, newBook]);
-            console.log("Registered bookId:", result.bookId);
+            if (editingBookId) {
+                // 更新
+                setBooks((prevBooks) =>
+                    prevBooks.map(b => b.bookId === editingBookId ? { ...b, ...bookData } : b)
+                );
+            } else {
+                // 新規登録
+                const newBook: Book = {
+                    title: title,
+                    author: author,
+                    deadline: new Date(deadline).toISOString(),
+                    status: "unread",
+                    insultLevel: Number(insultLevel),
+                    userId: firebaseUser.uid,
+                    bookId: result.bookId,
+                };
+                setBooks((prevBooks) => [...prevBooks, newBook]);
+            }
 
             // フォームをクリア
             setTitle("");
             setAuthor("");
             setDeadline("");
             setInsultLevel(3);
+            setEditingBookId(null);
         } catch (err: any) {
-            console.error("書籍登録エラー:", err);
+            console.error(editingBookId ? "書籍更新エラー:" : "書籍登録エラー:", err);
             setError(
-                err.message || "書籍登録中に予期せぬエラーが発生しました。",
+                err.message || (editingBookId ? "書籍更新中に予期せぬエラーが発生しました。" : "書籍登録中に予期せぬエラーが発生しました。"),
             );
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleEditClick = (book: Book) => {
+        setEditingBookId(book.bookId);
+        setTitle(book.title);
+        setAuthor(book.author);
+        // ISO String (2023-12-31T00:00:00.000Z) から YYYY-MM-DD を抽出
+        setDeadline(book.deadline.split('T')[0]);
+        setInsultLevel(book.insultLevel);
+
+        // フォームまでスクロール
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleDeleteClick = async (bookId: string) => {
+        if (!confirm("本当にこの本を削除しちゃうの？🥺 せっかく登録したのに…")) {
+            return;
+        }
+
+        try {
+            const response = await fetch("https://tundoku-killer.onrender.com/api/books", {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ bookId, userId: firebaseUser.uid }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || "削除に失敗しました。");
+            }
+
+            setBooks((prevBooks) => prevBooks.filter(b => b.bookId !== bookId));
+            alert("削除したよ！スッキリしたね！✨");
+        } catch (err: any) {
+            console.error("削除エラー:", err);
+            alert(err.message || "削除中にエラーが発生しました。");
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setEditingBookId(null);
+        setTitle("");
+        setAuthor("");
+        setDeadline("");
+        setInsultLevel(3);
     };
 
     const handleCompleteClick = async (bookId: string) => {
@@ -283,7 +340,7 @@ function App() {
                     </p>
 
                     <h2 className="text-3xl font-black text-pink-200 mb-6 text-center drop-shadow-md">
-                        💖書籍を登録するしかなくない？💖
+                        {editingBookId ? "💖書籍を修正するしかなくない？💖" : "💖書籍を登録するしかなくない？💖"}
                     </h2>
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div>
@@ -356,12 +413,23 @@ function App() {
                                 <option value={5}>5 (鬼煽り！)</option>
                             </select>
                         </div>
-                        <button
-                            type="submit"
-                            className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-white font-black py-3 px-6 rounded-full w-full focus:outline-none focus:shadow-outline transform transition-transform duration-300 text-lg shadow-xl uppercase tracking-wider"
-                        >
-                            💖書籍を登録するしかなくない？！💖
-                        </button>
+                        <div className="flex gap-4">
+                            <button
+                                type="submit"
+                                className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-white font-black py-3 px-6 rounded-full flex-1 focus:outline-none focus:shadow-outline transform transition-transform duration-300 text-lg shadow-xl uppercase tracking-wider"
+                            >
+                                {editingBookId ? "💖修正を保存する💖" : "💖書籍を登録するしかなくない？！💖"}
+                            </button>
+                            {editingBookId && (
+                                <button
+                                    type="button"
+                                    onClick={handleCancelEdit}
+                                    className="bg-gray-500 hover:bg-gray-400 text-white font-black py-3 px-6 rounded-full focus:outline-none focus:shadow-outline transform transition-transform duration-300 text-lg shadow-xl"
+                                >
+                                    キャンセル
+                                </button>
+                            )}
+                        </div>
                     </form>
 
                     <div className="mt-10 p-6 bg-pink-700 rounded-xl shadow-lg drop-shadow-md border-2 border-pink-300" style={{ boxShadow: '0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff' }}>
@@ -391,28 +459,41 @@ function App() {
                                             )}
                                         </p>
                                         <p
-                                            className={`text-sm font-black mt-2 uppercase ${
-                                                book.status === "insulted"
+                                            className={`text-sm font-black mt-2 uppercase ${book.status === "insulted"
                                                     ? "text-red-400 animate-pulse"
                                                     : book.status ===
                                                         "completed"
-                                                      ? "text-green-300"
-                                                      : "text-yellow-300"
-                                            }`}
+                                                        ? "text-green-300"
+                                                        : "text-yellow-300"
+                                                }`}
                                         >
                                             ステータス: {book.status === "unread" ? "未読" : book.status === "reading" ? "読書中" : book.status === "completed" ? "読了済" : "煽られ中"}
                                         </p>
                                         {book.status !== "completed" && (
-                                            <button
-                                                onClick={() =>
-                                                    handleCompleteClick(
-                                                        book.bookId,
-                                                    )
-                                                }
-                                                className="mt-4 bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-300 hover:to-blue-400 text-white font-black py-2 px-4 rounded-full text-sm focus:outline-none focus:shadow-outline transform transition-transform duration-300 hover:scale-110 shadow-md"
-                                            >
-                                                読了！天才じゃん！✌️
-                                            </button>
+                                            <div className="flex flex-wrap gap-2 mt-4">
+                                                <button
+                                                    onClick={() =>
+                                                        handleCompleteClick(
+                                                            book.bookId,
+                                                        )
+                                                    }
+                                                    className="bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-300 hover:to-blue-400 text-white font-black py-2 px-4 rounded-full text-sm focus:outline-none focus:shadow-outline transform transition-transform duration-300 hover:scale-110 shadow-md"
+                                                >
+                                                    読了！天才じゃん！✌️
+                                                </button>
+                                                <button
+                                                    onClick={() => handleEditClick(book)}
+                                                    className="bg-yellow-500 hover:bg-yellow-400 text-white font-black py-2 px-4 rounded-full text-sm focus:outline-none focus:shadow-outline transform transition-transform duration-300 hover:scale-110 shadow-md"
+                                                >
+                                                    編集する✨
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteClick(book.bookId)}
+                                                    className="bg-red-500 hover:bg-red-400 text-white font-black py-2 px-4 rounded-full text-sm focus:outline-none focus:shadow-outline transform transition-transform duration-300 hover:scale-110 shadow-md"
+                                                >
+                                                    削除🥺
+                                                </button>
+                                            </div>
                                         )}
                                     </li>
                                 ))}
@@ -450,6 +531,20 @@ function App() {
                                         <p className="text-sm font-black mt-2 uppercase text-green-300">
                                             ステータス: 読了済！天才！
                                         </p>
+                                        <div className="flex gap-2 mt-4">
+                                            <button
+                                                onClick={() => handleEditClick(book)}
+                                                className="bg-yellow-500 hover:bg-yellow-400 text-white font-black py-2 px-4 rounded-full text-sm focus:outline-none focus:shadow-outline transform transition-transform duration-300 hover:scale-110 shadow-md"
+                                            >
+                                                編集する✨
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteClick(book.bookId)}
+                                                className="bg-red-500 hover:bg-red-400 text-white font-black py-2 px-4 rounded-full text-sm focus:outline-none focus:shadow-outline transform transition-transform duration-300 hover:scale-110 shadow-md"
+                                            >
+                                                削除🥺
+                                            </button>
+                                        </div>
                                     </li>
                                 ))}
                             </ul>

@@ -162,9 +162,104 @@ func handleBooks(w http.ResponseWriter, r *http.Request) {
 		handleGetBooks(w, r)
 	case http.MethodPost:
 		handleRegisterBook(w, r)
+	case http.MethodPut:
+		handleUpdateBook(w, r)
+	case http.MethodDelete:
+		handleDeleteBook(w, r)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
+}
+
+// handleUpdateBook は書籍情報を更新する
+func handleUpdateBook(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+
+	var book Book
+	if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
+		http.Error(w, fmt.Sprintf("error decoding request body: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	if book.BookID == "" || book.UserID == "" {
+		http.Error(w, "bookId and userId are required", http.StatusBadRequest)
+		return
+	}
+
+	// Firestoreのドキュメントを更新
+	docRef := firestoreClient.Collection("books").Doc(book.BookID)
+
+	// 更新前にその本の所持者かチェックする（簡易セキュリティ）
+	doc, err := docRef.Get(ctx)
+	if err != nil {
+		http.Error(w, "Book not found", http.StatusNotFound)
+		return
+	}
+	var existingBook Book
+	if err := doc.DataTo(&existingBook); err != nil {
+		http.Error(w, "Failed to parse existing book data", http.StatusInternalServerError)
+		return
+	}
+	if existingBook.UserID != book.UserID {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	_, err = docRef.Set(ctx, book) // 全て上書き
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error updating book in Firestore: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Book updated: %s (ID: %s)", book.Title, book.BookID)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Book updated successfully"})
+}
+
+// handleDeleteBook は書籍を削除する
+func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+
+	var reqBody struct {
+		BookID string `json:"bookId"`
+		UserID string `json:"userId"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		http.Error(w, fmt.Sprintf("error decoding request body: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	if reqBody.BookID == "" || reqBody.UserID == "" {
+		http.Error(w, "bookId and userId are required", http.StatusBadRequest)
+		return
+	}
+
+	docRef := firestoreClient.Collection("books").Doc(reqBody.BookID)
+
+	// 削除前に所持者チェック
+	doc, err := docRef.Get(ctx)
+	if err != nil {
+		http.Error(w, "Book not found", http.StatusNotFound)
+		return
+	}
+	var existingBook Book
+	if err := doc.DataTo(&existingBook); err != nil {
+		http.Error(w, "Failed to parse existing book data", http.StatusInternalServerError)
+		return
+	}
+	if existingBook.UserID != reqBody.UserID {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	_, err = docRef.Delete(ctx)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error deleting book from Firestore: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Book deleted: %s", reqBody.BookID)
+	w.Header().Set("Content-Type", "application/json")
 }
 
 // handleGetBooks は登録済みの書籍リストを取得する
